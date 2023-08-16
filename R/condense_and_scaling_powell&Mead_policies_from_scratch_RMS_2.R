@@ -1,12 +1,7 @@
-
+# Process policy set data and create barplots representing decision variables
 # Script modified from version provided by Reclamation in June 2022
 # Modified by E Stark August 2023
 
-
-#setwd("C:\\Users\\ealexander\\Documents\\MORDM Continuation\\Internal Work\\MOEA\\Mead-and-Powell\\NewMaster_10-08-21")
-
-#setwd("Z:/Shared/Research/DMDU continuation/internal work/Mead-and-Powell/RampingRun_03-2-22_10kFE")
-setwd("D:/PowellPols_data/FullRampingRun_6.6.22")
 
 rm(list=ls())
 
@@ -23,14 +18,14 @@ library(plotrix)
 #library(tidyverse)
 library(readxl)
 
-workbook.name = "Archive_FullHydrologyRampingRun_5kFE_withID.xlsx"
+workbook.name = "data/inputs/Archive_4Selected.xlsx"
 #wb = loadWorkbook(workbook.name)
 wb = read_excel(workbook.name)
 #df = readWorksheet(wb, sheet = "Sheet1", header = TRUE)
-df = wb[1:284,]
+df = wb[1:6,]
 
 #for testing, create snapshot of original df
-#df_og = df
+df_og = df
 
 
 ########################################
@@ -41,16 +36,15 @@ df = wb[1:284,]
 
 ###create a powell df (PTiering) for each policy
 for (j in 1:nrow(df)){
-  #j=1
-  PTierEl = t(df[j, 20:24])
-  MeadRefs = t(df[j,25:29])
-  RelRanges = t(df[j,30:34])
-  BalVars = t(df[j,35:39])
-  PRels = t(df[j,40:44])
+  PTierEl = t(df[j, 19:23])
+  MeadRefs = t(df[j, 29:33])
+  BalMaxOffset = t(df[j, 34:38])
+  BalMinOffset = t(df[j, 39:43])
+  PRels = t(df[j, 24:28])
   
-  PTiering = as.data.frame(cbind(PTierEl, MeadRefs, RelRanges, BalVars, PRels))
+  PTiering = as.data.frame(cbind(PTierEl, MeadRefs, BalMaxOffset, BalMinOffset, PRels))
   row.names(PTiering) = c("PT1", "PT2", "PT3", "PT4", "PT5")
-  colnames(PTiering) = c("PTierEl", "MeadRefEl", "RelRanges", "BalVars", "PRels")
+  colnames(PTiering) = c("PTierEl", "MeadRefEl", "BalMaxOffset", "BalMinOffset", "PRels")
   
   # create examples to test functionality
   
@@ -62,7 +56,7 @@ for (j in 1:nrow(df)){
   
   #for testing, create snapshot of PTiering before any translations
   
-  #PTieringOG = PTiering
+  PTieringOG = PTiering
   
   #replace vals in cols 2-5 w/ row that has highest value of primary release (col 5)
   
@@ -91,18 +85,18 @@ for (j in 1:nrow(df)){
   if (PTiering[nrow(PTiering),1]==3370 && PTiering[1,1]!=3370){
     next_min = which(PTiering[,1]==min(PTiering$PTierEl[PTiering$PTierEl > 3370]))
     PTiering[next_min,"MeadRefEl"] = PTiering[next_min,"PRels"] = 99999999
-    PTiering[next_min,"BalVars"] = 1
+    #PTiering[next_min,"BalVars"] = 1
   } 
   
   
   #make MeadRefEl and RElRange = 99999999 if BalVar = 0
   
-  for (i in 1:(nrow(PTiering))){
-    #i=1
-    if (PTiering[i,4] == 0){
-      PTiering[i,2] = PTiering[i,3] = 99999999
-      }
-  }
+  # for (i in 1:(nrow(PTiering))){
+  #   #i=1
+  #   if (PTiering[i,4] == 0){
+  #     PTiering[i,2] = PTiering[i,3] = 99999999
+  #     }
+  #}
   
   
   
@@ -128,32 +122,33 @@ for (j in 1:nrow(df)){
   
   #sort based on col 1
   
-  PTiering = PTiering[order(-PTiering$PTierEl), ] 
+  PTiering = PTiering[order(PTiering$PTierEl, decreasing = TRUE), ] 
   
   
   
   #distribute columns of powell df back into a single row and combine w/ un-condensed mead variables & objective values
 
-  df[j,20:24] = t(PTiering$PTierEl)
-  df[j,25:29] = t(PTiering$MeadRefEl)
-  df[j,30:34] = t(PTiering$RelRanges)
-  df[j,35:39] = t(PTiering$BalVars)
-  df[j,40:44] = t(PTiering$PRels)
+  df[j,19:23] = t(PTiering$PTierEl)
+  df[j,29:33] = t(PTiering$MeadRefEl)
+  df[j,34:38] = t(PTiering$BalMaxOffset)
+  df[j,39:43] = t(PTiering$BalMinOffset)
+  df[j,24:28] = t(PTiering$PRels)
   
   #make EqInc = 0 if PT1e = 3700
-  if(df[j,20]==3700){
-    df[j,45] = 99999999
-  }
+#   if(df[j,20]==3700){
+#     df[j,45] = 99999999
+#   }
 }
 
 
 
 ############################## MEAD ####################
 
-short_elev = t(df[,4:11]) 
-row.names(short_elev) = c("T1e", "T2e", "T3e", "T4e", "T5e", "T6e", "T7e", "T8e")
+short_elev = t(df[,3:10]) 
+rownames(short_elev) = c("T1e", "T2e", "T3e", "T4e", "T5e", "T6e", "T7e", "T8e")
 
-short_vol = df[,12:19]/1000 
+df[,11:18] = apply(df[,11:18], 2, function(x) as.numeric(x))
+short_vol = df[,11:18]/1000 
 short_vol = apply(short_vol, 1, rev) #reverse order of volumes
 row.names(short_vol) = c("T1V", "T2V", "T3V", "T4V", "T5V", "T6V","T7V", "T8V")
 
@@ -219,7 +214,7 @@ for(i in 1:ncol(compressed_vol)){
 
 ### need to sort based on elevation only ###
 #### might need to combine the data frame, then sort everything based on elevaiton ####
-
+compressed_elev = apply(compressed_elev, 2, as.numeric)
 condensed_elev = apply(compressed_elev, 2, sort, decreasing=T)
 condensed_vol = apply(compressed_vol, 2, sort, decreasing=F)
 
@@ -239,49 +234,49 @@ condensed_policies = t(condensed_policies)
 #calculate elevations for two surplus tiers **if domestic surplus distance (d2) = 0, partial surplus goes away
 #and surplus takes on the size defined by d1
 
-surplus_sizes = df[,2:3]#check column indices ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+surplus_sizes = df[,2]#check column indices ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 #surplus_sizes2 = surplus_sizes #for comparison
 
-for(i in 1:nrow(surplus_sizes)){
-  if (surplus_sizes[i,2] == 0){
-    surplus_sizes[i,1:2] = surplus_sizes[i,2:1]
-  }
-}
-
-#also zero-out partial if d1=d2
-for(i in 1:nrow(surplus_sizes)){
-  if (surplus_sizes[i,2] == surplus_sizes[i,1]){
-    surplus_sizes[i,1] = 0
-  }
-}
+# for(i in 1:nrow(surplus_sizes)){
+#   if (surplus_sizes[i,2] == 0){
+#     surplus_sizes[i,1:2] = surplus_sizes[i,2:1]
+#   }
+# }
+# 
+# #also zero-out partial if d1=d2
+# for(i in 1:nrow(surplus_sizes)){
+#   if (surplus_sizes[i,2] == surplus_sizes[i,1]){
+#     surplus_sizes[i,1] = 0
+#   }
+# }
 
 #surplus_sizes2[48,]
 #surplus_sizes[48,] 
 
 
 
-part_surplus_elev = 1200 - surplus_sizes$d1
-surplus_elev = 1200 - surplus_sizes$d2
+#part_surplus_elev = 1200 - surplus_sizes$d1
+surplus_elev = 1200 - as.numeric(surplus_sizes$Mead_Surplus_DV)
 
 #if partial surplus or surplus went away, replace 1200s w/ 99999999
 surplus_elev[surplus_elev==1200] = 99999999
-part_surplus_elev[part_surplus_elev==1200] = 99999999
+#part_surplus_elev[part_surplus_elev==1200] = 99999999
 
 # ID=1:nrow(condensed_policies)
 
-condensed_policies_full = cbind(surplus_elev, part_surplus_elev, condensed_policies)#, df[,45:53]) #check column indices 
+condensed_policies_full = cbind(surplus_elev, condensed_policies)#, df[,45:53]) #check column indices 
 
 #replace Mead variables in original df w/ condensed variables
 
-df = cbind(condensed_policies_full, df[,20:53])
+df = cbind(condensed_policies_full, df[,19:47])
 
 
 ### I didn't see any policies with 8 shortage tiers... need to look into this.... ###
 
 #### write the condensed dataframe to a csv file ####
 
-write.csv(df, "All_values_RampingRun_5kFE_withID_after_condensing.csv")
+write.csv(df, "data/outputs/condensed_DVs_6Selected.csv")
 
 ### Scaling script #################################################################################################
 
@@ -293,7 +288,7 @@ write.csv(df, "All_values_RampingRun_5kFE_withID_after_condensing.csv")
 #df = readWorksheet(wb, sheet = "Sheet1", header = TRUE)
 
  
-numobj = 8
+numobj = 4
 
 archive.mat = as.matrix(df[,(ncol(df)-(numobj-1)):ncol(df)])
 
