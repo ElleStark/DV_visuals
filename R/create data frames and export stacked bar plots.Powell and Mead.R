@@ -11,7 +11,7 @@ library(patchwork)
 
 rm(list=ls())
 
-Archive='data/outputs/condensed_DVs_6Selected.csv'
+Archive='data/outputs/condensed_DVs_baseline.csv'
 
 Archive.df=read.table(Archive, header = T, sep = ",")
 
@@ -326,7 +326,7 @@ for (i in 1:nrow(Archive.df)){
 policy_id = sprintf("%04d", i)
 
 powell_pol = ggplot(subset(p.df, policy %in% c(policy_id)), aes(fill=Tier, y=delta, 
-                                                                x=policy))+ #label=t_lab 
+                                                                x=policy, label=t_lab))+  
   geom_bar(position="stack", stat="identity", color="black", show.legend = FALSE)+
   scale_fill_manual(values=c(
     "#1BBC9B", 
@@ -336,7 +336,7 @@ powell_pol = ggplot(subset(p.df, policy %in% c(policy_id)), aes(fill=Tier, y=del
     "#79BD8F",
     "#289976",
     "#26A69A"))+
-  #geom_text(position = position_stack(vjust = .5), size=2.5)+
+  geom_text(position = position_stack(vjust = .5), size=2.5)+
   theme_minimal()+
   ggtitle("Lake Powell")+
   theme(plot.title = element_text(hjust = .5))+
@@ -348,10 +348,10 @@ powell_pol = ggplot(subset(p.df, policy %in% c(policy_id)), aes(fill=Tier, y=del
 mead_col = as.character(df$v_col[which(df$policy==policy_id)])
 
 mead_pol = ggplot(data=subset(df, policy %in% c(policy_id)), aes(fill=Tier, y=delta, 
-                                                                 x=policy))+ #label=v_lab 
+                                                                 x=policy, label=v_lab))+  
   geom_bar(position="stack", stat="identity",  color="black",  show.legend = FALSE)+
   scale_fill_manual(values=mead_col)+
-  #geom_text(position = position_stack(vjust = .5), size=2.5)+
+  geom_text(position = position_stack(vjust = .5), size=2.5)+
   theme_minimal()+
   ggtitle("Lake Mead")+
   theme(plot.title = element_text(hjust = .5))+
@@ -363,7 +363,7 @@ powell_pol + mead_pol
 
 both.fig = powell_pol + mead_pol
 
-ggsave(paste("data/outputs/policy images no lab/policy.", policy_id,".png", sep = ""), 
+ggsave(paste("data/outputs/baseline policy images/policy.", policy_id,".png", sep = ""), 
        plot = both.fig, 
        device = "png",
        width = 1650, height = 1420, units = "px",

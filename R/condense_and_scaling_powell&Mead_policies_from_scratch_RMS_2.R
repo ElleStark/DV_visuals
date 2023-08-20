@@ -18,11 +18,11 @@ library(plotrix)
 #library(tidyverse)
 library(readxl)
 
-workbook.name = "data/inputs/Archive_4Selected.xlsx"
+workbook.name = "data/inputs/Baseline_Data.xlsx"
 #wb = loadWorkbook(workbook.name)
 wb = read_excel(workbook.name)
 #df = readWorksheet(wb, sheet = "Sheet1", header = TRUE)
-df = wb[1:6,]
+df = wb[1:240,]
 
 #for testing, create snapshot of original df
 df_og = df
@@ -276,7 +276,7 @@ df = cbind(condensed_policies_full, df[,19:47])
 
 #### write the condensed dataframe to a csv file ####
 
-write.csv(df, "data/outputs/condensed_DVs_6Selected.csv")
+write.csv(df, "data/outputs/condensed_DVs_baseline.csv")
 
 ### Scaling script #################################################################################################
 
